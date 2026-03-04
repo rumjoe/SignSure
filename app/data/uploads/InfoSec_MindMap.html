@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Information Security Mind Map – ICT Solutions Ltd</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #0d1b2a; color: #fff; min-height: 100vh; }
+  .page-header { text-align: center; padding: 24px 20px 10px; }
+  .page-header h1 { font-size: 22px; font-weight: 800; color: #CADCFC; letter-spacing: 1px; }
+  .page-header p { font-size: 12px; color: #90a8c0; margin-top: 4px; }
+  .subtitle { font-size: 11px; background: #1e2761; display: inline-block; padding: 4px 16px; border-radius: 20px; margin-top: 6px; color: #CADCFC; }
+
+  .canvas { position: relative; width: 1200px; height: 900px; margin: 10px auto 30px; }
+
+  /* SVG lines behind everything */
+  svg.lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  /* Centre node */
+  .centre {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, #1e2761, #0d1b2a);
+    border: 3px solid #CADCFC;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    z-index: 10;
+    box-shadow: 0 0 30px rgba(202,220,252,0.3);
+  }
+  .centre .icon { font-size: 32px; }
+  .centre .label { font-size: 13px; font-weight: 800; color: #CADCFC; margin-top: 6px; line-height: 1.2; }
+
+  /* Branch nodes */
+  .branch {
+    position: absolute;
+    border-radius: 12px;
+    padding: 10px 14px;
+    z-index: 8;
+    cursor: default;
+    min-width: 150px;
+    max-width: 190px;
+    text-align: center;
+  }
+  .branch .b-icon { font-size: 22px; }
+  .branch .b-title { font-size: 12px; font-weight: 800; margin-top: 4px; line-height: 1.2; }
+
+  /* Leaf nodes */
+  .leaf {
+    position: absolute;
+    border-radius: 8px;
+    padding: 6px 10px;
+    z-index: 7;
+    font-size: 10px;
+    line-height: 1.3;
+    min-width: 120px;
+    max-width: 155px;
+    text-align: center;
+  }
+
+  /* Branch colours */
+  .c1 { background: #1e2761; border: 2px solid #4a90d9; color: #CADCFC; }
+  .c2 { background: #1a3a2a; border: 2px solid #27ae60; color: #a8e6c0; }
+  .c3 { background: #3a1a1a; border: 2px solid #e74c3c; color: #f5b0ab; }
+  .c4 { background: #2a1a3a; border: 2px solid #9b59b6; color: #d7b8f3; }
+  .c5 { background: #1a2e3a; border: 2px solid #028090; color: #a0d8e0; }
+  .c6 { background: #3a2a10; border: 2px solid #e67e22; color: #f5cfa0; }
+  .c7 { background: #1a3a38; border: 2px solid #1abc9c; color: #a0ede0; }
+  .c8 { background: #3a1a2a; border: 2px solid #e91e8c; color: #f5a8ce; }
+
+  /* Leaf variants (lighter) */
+  .l1 { background: rgba(30,39,97,0.7); border: 1px solid #4a90d9; color: #b8ccf0; }
+  .l2 { background: rgba(26,58,42,0.7); border: 1px solid #27ae60; color: #90d8a8; }
+  .l3 { background: rgba(58,26,26,0.7); border: 1px solid #e74c3c; color: #f0a0a0; }
+  .l4 { background: rgba(42,26,58,0.7); border: 1px solid #9b59b6; color: #c8a8e8; }
+  .l5 { background: rgba(26,46,58,0.7); border: 1px solid #028090; color: #88c8d0; }
+  .l6 { background: rgba(58,42,16,0.7); border: 1px solid #e67e22; color: #e8c090; }
+  .l7 { background: rgba(26,58,56,0.7); border: 1px solid #1abc9c; color: #90d8d0; }
+  .l8 { background: rgba(58,26,42,0.7); border: 1px solid #e91e8c; color: #e8a0c0; }
+
+  .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 10px 20px 20px; max-width: 1200px; margin: 0 auto; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #90a8c0; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>🛡️ INFORMATION SECURITY MIND MAP</h1>
+  <p>A comprehensive overview of Information Security concepts, frameworks, and influences</p>
+  <span class="subtitle">ICT Solutions Ltd &nbsp;|&nbsp; ST6054CEM Security Management &nbsp;|&nbsp; March 2026</span>
+</div>
+
+<div class="canvas" id="canvas">
+  <svg class="lines" id="svg-lines"></svg>
+
+  <!-- CENTRE -->
+  <div class="centre" id="centre">
+    <div class="icon">🔐</div>
+    <div class="label">INFORMATION<br>SECURITY</div>
+  </div>
+
+  <!-- BRANCH 1: Governance & Frameworks (top) -->
+  <div class="branch c1" id="b1" style="left:480px;top:30px;">
+    <div class="b-icon">🏛️</div>
+    <div class="b-title">Governance &amp;<br>Frameworks</div>
+  </div>
+  <div class="leaf l1" style="left:310px;top:10px;"><strong>ISO/IEC 27001</strong><br>ISMS Standard</div>
+  <div class="leaf l1" style="left:645px;top:10px;"><strong>NIST CSF</strong><br>Cyber Security Framework</div>
+  <div class="leaf l1" style="left:390px;top:118px;"><strong>GDPR / UK DPA</strong><br>Legal Compliance</div>
+  <div class="leaf l1" style="left:570px;top:118px;"><strong>CIS Controls</strong><br>Best Practice Controls</div>
+
+  <!-- BRANCH 2: Risk Management (top-right) -->
+  <div class="branch c2" id="b2" style="left:880px;top:160px;">
+    <div class="b-icon">⚠️</div>
+    <div class="b-title">Risk<br>Management</div>
+  </div>
+  <div class="leaf l2" style="left:1000px;top:90px;"><strong>Threat Identification</strong><br>Internal &amp; External Threats</div>
+  <div class="leaf l2" style="left:1020px;top:200px;"><strong>Risk Assessment</strong><br>Likelihood × Severity</div>
+  <div class="leaf l2" style="left:960px;top:305px;"><strong>Mitigation</strong><br>Accept / Transfer / Reduce</div>
+
+  <!-- BRANCH 3: Technical Controls (right) -->
+  <div class="branch c3" id="b3" style="left:935px;top:420px;">
+    <div class="b-icon">🔧</div>
+    <div class="b-title">Technical<br>Controls</div>
+  </div>
+  <div class="leaf l3" style="left:1030px;top:370px;"><strong>Firewalls &amp; IDS/IPS</strong></div>
+  <div class="leaf l3" style="left:1045px;top:455px;"><strong>Encryption (TLS, AES)</strong></div>
+  <div class="leaf l3" style="left:1020px;top:540px;"><strong>Patch Management</strong></div>
+  <div class="leaf l3" style="left:940px;top:610px;"><strong>Vulnerability Scanning</strong></div>
+
+  <!-- BRANCH 4: Emerging Technologies (bottom-right) -->
+  <div class="branch c4" id="b4" style="left:790px;top:690px;">
+    <div class="b-icon">🤖</div>
+    <div class="b-title">Emerging<br>Technologies</div>
+  </div>
+  <div class="leaf l4" style="left:910px;top:730px;"><strong>AI &amp; ML</strong><br>Threat Detection / Deepfakes</div>
+  <div class="leaf l4" style="left:880px;top:820px;"><strong>Cloud Computing</strong><br>Shared Responsibility</div>
+  <div class="leaf l4" style="left:760px;top:820px;"><strong>IoT Devices</strong><br>Expanded Attack Surface</div>
+  <div class="leaf l4" style="left:655px;top:800px;"><strong>Big Data</strong><br>Data Privacy Risks</div>
+
+  <!-- BRANCH 5: People & Culture (bottom) -->
+  <div class="branch c5" id="b5" style="left:490px;top:750px;">
+    <div class="b-icon">👥</div>
+    <div class="b-title">People &amp;<br>Culture</div>
+  </div>
+  <div class="leaf l5" style="left:520px;top:850px;"><strong>Security Awareness Training</strong></div>
+  <div class="leaf l5" style="left:390px;top:830px;"><strong>Insider Threat Management</strong></div>
+  <div class="leaf l5" style="left:460px;top:760px;"><strong>Acceptable Use Policies</strong></div>
+
+  <!-- BRANCH 6: Data Protection (bottom-left) -->
+  <div class="branch c6" id="b6" style="left:120px;top:680px;">
+    <div class="b-icon">🗄️</div>
+    <div class="b-title">Data<br>Protection</div>
+  </div>
+  <div class="leaf l6" style="left:20px;top:730px;"><strong>Data Classification</strong><br>Public / Internal / Confidential</div>
+  <div class="leaf l6" style="left:30px;top:820px;"><strong>DLP Tools</strong><br>Data Loss Prevention</div>
+  <div class="leaf l6" style="left:155px;top:820px;"><strong>Backup &amp; Recovery</strong><br>3-2-1 Rule</div>
+  <div class="leaf l6" style="left:235px;top:750px;"><strong>Data Retention Policy</strong></div>
+
+  <!-- BRANCH 7: Identity & Access (left) -->
+  <div class="branch c7" id="b7" style="left:60px;top:390px;">
+    <div class="b-icon">🪪</div>
+    <div class="b-title">Identity &amp;<br>Access Mgmt</div>
+  </div>
+  <div class="leaf l7" style="left:20px;top:300px;"><strong>MFA / 2FA</strong><br>Multi-Factor Authentication</div>
+  <div class="leaf l7" style="left:20px;top:395px;"><strong>Zero Trust Architecture</strong></div>
+  <div class="leaf l7" style="left:20px;top:480px;"><strong>PAM</strong><br>Privileged Access Management</div>
+  <div class="leaf l7" style="left:175px;top:540px;"><strong>RBAC</strong><br>Role-Based Access Control</div>
+
+  <!-- BRANCH 8: Incident Response (top-left) -->
+  <div class="branch c8" id="b8" style="left:110px;top:150px;">
+    <div class="b-icon">🚨</div>
+    <div class="b-title">Incident<br>Response</div>
+  </div>
+  <div class="leaf l8" style="left:10px;top:90px;"><strong>SIEM &amp; SOC</strong><br>Security Monitoring</div>
+  <div class="leaf l8" style="left:15px;top:185px;"><strong>IR Playbooks</strong><br>Structured Response Plans</div>
+  <div class="leaf l8" style="left:200px;top:80px;"><strong>Forensic Analysis</strong><br>Evidence Collection</div>
+  <div class="leaf l8" style="left:245px;top:185px;"><strong>Business Continuity</strong><br>BCP / DRP</div>
+
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4a90d9;"></div> Governance & Frameworks</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#27ae60;"></div> Risk Management</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e74c3c;"></div> Technical Controls</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#9b59b6;"></div> Emerging Technologies</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#028090;"></div> People & Culture</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e67e22;"></div> Data Protection</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1abc9c;"></div> Identity & Access</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e91e8c;"></div> Incident Response</div>
+</div>
+
+<script>
+// Draw connector lines from centre to each branch, and branches to leaves
+const canvas = document.getElementById('canvas');
+const svg = document.getElementById('svg-lines');
+
+function getCenter(el) {
+  const r = el.getBoundingClientRect();
+  const cr = canvas.getBoundingClientRect();
+  return {
+    x: r.left - cr.left + r.width / 2,
+    y: r.top - cr.top + r.height / 2
+  };
+}
+
+function drawLine(x1, y1, x2, y2, color, width, opacity) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', width || 2);
+  line.setAttribute('opacity', opacity || 0.6);
+  svg.appendChild(line);
+}
+
+const branchColors = {
+  b1: '#4a90d9', b2: '#27ae60', b3: '#e74c3c', b4: '#9b59b6',
+  b5: '#028090', b6: '#e67e22', b7: '#1abc9c', b8: '#e91e8c'
+};
+
+const leafToBranch = {
+  // b1 leaves
+  'left:310px;top:10px;': 'b1', 'left:645px;top:10px;': 'b1',
+  'left:390px;top:118px;': 'b1', 'left:570px;top:118px;': 'b1',
+  // b2 leaves
+  'left:1000px;top:90px;': 'b2', 'left:1020px;top:200px;': 'b2', 'left:960px;top:305px;': 'b2',
+  // b3 leaves
+  'left:1030px;top:370px;': 'b3', 'left:1045px;top:455px;': 'b3',
+  'left:1020px;top:540px;': 'b3', 'left:940px;top:610px;': 'b3',
+  // b4 leaves
+  'left:910px;top:730px;': 'b4', 'left:880px;top:820px;': 'b4',
+  'left:760px;top:820px;': 'b4', 'left:655px;top:800px;': 'b4',
+  // b5 leaves
+  'left:520px;top:850px;': 'b5', 'left:390px;top:830px;': 'b5', 'left:460px;top:760px;': 'b5',
+  // b6 leaves
+  'left:20px;top:730px;': 'b6', 'left:30px;top:820px;': 'b6',
+  'left:155px;top:820px;': 'b6', 'left:235px;top:750px;': 'b6',
+  // b7 leaves
+  'left:20px;top:300px;': 'b7', 'left:20px;top:395px;': 'b7',
+  'left:20px;top:480px;': 'b7', 'left:175px;top:540px;': 'b7',
+  // b8 leaves
+  'left:10px;top:90px;': 'b8', 'left:15px;top:185px;': 'b8',
+  'left:200px;top:80px;': 'b8', 'left:245px;top:185px;': 'b8',
+};
+
+window.onload = function() {
+  const centre = document.getElementById('centre');
+  const cc = getCenter(centre);
+
+  // Draw branch lines
+  ['b1','b2','b3','b4','b5','b6','b7','b8'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const bc = getCenter(el);
+    drawLine(cc.x, cc.y, bc.x, bc.y, branchColors[id], 2.5, 0.7);
+  });
+
+  // Draw leaf lines
+  const leaves = document.querySelectorAll('.leaf');
+  leaves.forEach(leaf => {
+    const style = leaf.getAttribute('style');
+    const branchId = leafToBranch[style];
+    if (!branchId) return;
+    const branch = document.getElementById(branchId);
+    if (!branch) return;
+    const lc = getCenter(leaf);
+    const bc = getCenter(branch);
+    drawLine(bc.x, bc.y, lc.x, lc.y, branchColors[branchId], 1.5, 0.4);
+  });
+};
+</script>
+</body>
+</html>

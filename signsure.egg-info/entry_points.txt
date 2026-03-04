@@ -1,0 +1,2 @@
+[console_scripts]
+signsure = run:main

@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: signsure
+Version: 1.0.0
+Summary: Open-Source PKI Document Signing & Verification System
+Author: SignSure Contributors
+License: MIT
+Requires-Python: >=3.10
+License-File: LICENSE
+Requires-Dist: cryptography>=42.0.0
+Requires-Dist: flask>=3.0.0
+Requires-Dist: werkzeug>=3.0.0
+Requires-Dist: click>=8.1.0
+Requires-Dist: colorama>=0.4.6
+Dynamic: author
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

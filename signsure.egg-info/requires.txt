@@ -1,0 +1,5 @@
+cryptography>=42.0.0
+flask>=3.0.0
+werkzeug>=3.0.0
+click>=8.1.0
+colorama>=0.4.6

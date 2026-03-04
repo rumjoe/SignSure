@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SignSure — PKI Document Security Platform</title>
+<style>
+  :root {
+    --bg:          #0a0f1e;
+    --surface:     #111827;
+    --surface2:    #1a2235;
+    --border:      #1f2d45;
+    --accent:      #3b82f6;
+    --accent2:     #06b6d4;
+    --success:     #10b981;
+    --danger:      #ef4444;
+    --warning:     #f59e0b;
+    --text:        #e2e8f0;
+    --text2:       #94a3b8;
+    --text3:       #64748b;
+    --glow:        rgba(59,130,246,0.15);
+    --glow2:       rgba(6,182,212,0.1);
+    --radius:      14px;
+    --radius-sm:   8px;
+    --font:        'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-mono:   'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --transition:  0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND MESH ──────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(59,130,246,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6,182,212,0.06) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── LAYOUT ───────────────────────────────────── */
+  .app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* ── SIDEBAR ──────────────────────────────────── */
+  .sidebar {
+    width: 260px; flex-shrink: 0;
+    background: rgba(17,24,39,0.95);
+    border-right: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transition: transform var(--transition);
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+    box-shadow: 0 0 20px var(--glow);
+  }
+  .logo-text { line-height: 1.2; }
+  .logo-text .name { font-size: 18px; font-weight: 700; color: var(--text); }
+  .logo-text .tagline { font-size: 11px; color: var(--text3); letter-spacing: 0.03em; }
+
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text3);
+    padding: 12px 8px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--text2);
+    font-size: 14px; font-weight: 500;
+    transition: all var(--transition); user-select: none;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
+  .nav-item.active {
+    background: rgba(59,130,246,0.12);
+    color: var(--accent);
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 0 0 1px rgba(59,130,246,0.1) inset;
+  }
+  .nav-item .icon { width: 20px; text-align: center; font-size: 16px; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; background: var(--accent);
+    color: white; font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 10px;
+  }
+
+  .sidebar-footer {
+    padding: 16px; border-top: 1px solid var(--border);
+  }
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    background: var(--surface2); font-size: 12px;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text3); flex-shrink: 0;
+    transition: background var(--transition);
+  }
+  .status-dot.active { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .status-dot.warn   { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+
+  /* ── MAIN CONTENT ─────────────────────────────── */
+  .main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    height: 60px; border-bottom: 1px solid var(--border);
+    background: rgba(10,15,30,0.8); backdrop-filter: blur(20px);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; position: sticky; top: 0; z-index: 50;
+  }
+  .page-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .badge-pill {
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    background: rgba(59,130,246,0.1); color: var(--accent);
+    border: 1px solid rgba(59,130,246,0.2);
+  }
+
+  .content { padding: 28px; flex: 1; }
+
+  /* ── PANELS ───────────────────────────────────── */
+  .panel {
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+  .panel.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── CARDS ────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: border-color var(--transition);
+  }
+  .card:hover { border-color: rgba(59,130,246,0.2); }
+  .card-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title .icon { color: var(--accent); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .gap-20 { margin-bottom: 20px; }
+
+  /* ── STAT CARDS ───────────────────────────────── */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex; align-items: flex-start; gap: 16px;
+    transition: all var(--transition);
+  }
+  .stat-card:hover {
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 0 30px var(--glow);
+  }
+  .stat-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .stat-icon.blue  { background: rgba(59,130,246,0.12); }
+  .stat-icon.cyan  { background: rgba(6,182,212,0.12); }
+  .stat-icon.green { background: rgba(16,185,129,0.12); }
+  .stat-icon.amber { background: rgba(245,158,11,0.12); }
+  .stat-num  { font-size: 28px; font-weight: 700; line-height: 1; }
+  .stat-label{ font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+  /* ── FORM ELEMENTS ────────────────────────────── */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--text2); margin-bottom: 6px; letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .form-input, .form-select {
+    width: 100%; padding: 10px 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font); font-size: 14px;
+    transition: all var(--transition); outline: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+  .form-input::placeholder { color: var(--text3); }
+  .form-select option { background: var(--surface2); }
+
+  /* ── DROP ZONE ────────────────────────────────── */
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 40px 24px; text-align: center; cursor: pointer;
+    transition: all var(--transition);
+    background: rgba(26,34,53,0.4);
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(59,130,246,0.05);
+    box-shadow: 0 0 30px var(--glow);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2;
+  }
+  .drop-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+  .drop-text { font-size: 14px; color: var(--text2); }
+  .drop-hint { font-size: 12px; color: var(--text3); margin-top: 6px; }
+  .drop-filename {
+    margin-top: 12px; padding: 8px 14px;
+    background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+    border-radius: var(--radius-sm); font-size: 13px; color: var(--accent);
+    display: none; word-break: break-all;
+  }
+
+  /* ── BUTTONS ──────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; font-family: var(--font);
+    transition: all var(--transition); white-space: nowrap;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+  }
+  .btn-secondary {
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface); border-color: var(--accent); }
+  .btn-danger {
+    background: rgba(239,68,68,0.12); color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-success {
+    background: linear-gradient(135deg, var(--success), #059669);
+    color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+  }
+  .btn-success:hover { transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+
+  /* ── ALERTS ───────────────────────────────────── */
+  .alert {
+    padding: 14px 16px; border-radius: var(--radius-sm);
+    font-size: 13px; display: none; align-items: flex-start; gap: 10px;
+    animation: fadeUp 0.2s ease; margin-top: 16px;
+    border: 1px solid;
+  }
+  .alert.visible { display: flex; }
+  .alert-success { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); color: #6ee7b7; }
+  .alert-error   { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.25);  color: #fca5a5; }
+  .alert-info    { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.25); color: #93c5fd; }
+  .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-body { flex: 1; }
+  .alert-title { font-weight: 600; margin-bottom: 2px; }
+  .alert-msg   { opacity: 0.9; line-height: 1.5; }
+
+  /* ── RESULT CARD ──────────────────────────────── */
+  .result-grid { display: grid; gap: 8px; }
+  .result-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    background: var(--surface2); font-size: 13px;
+    border: 1px solid var(--border);
+  }
+  .result-label { color: var(--text2); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; min-width: 140px; }
+  .result-val { color: var(--text); font-family: var(--font-mono); word-break: break-all; }
+  .check { color: var(--success); font-size: 16px; }
+  .cross { color: var(--danger);  font-size: 16px; }
+
+  /* ── VERIFICATION RESULT ──────────────────────── */
+  .verify-banner {
+    border-radius: var(--radius); padding: 24px;
+    display: flex; align-items: center; gap: 20px;
+    margin-bottom: 20px; border: 1px solid;
+  }
+  .verify-banner.pass {
+    background: rgba(16,185,129,0.07);
+    border-color: rgba(16,185,129,0.3);
+  }
+  .verify-banner.fail {
+    background: rgba(239,68,68,0.07);
+    border-color: rgba(239,68,68,0.3);
+  }
+  .verify-icon { font-size: 40px; flex-shrink: 0; }
+  .verify-title { font-size: 20px; font-weight: 700; }
+  .verify-sub   { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+  /* ── CODE BLOCK ───────────────────────────────── */
+  .code-block {
+    background: #0d1117; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 16px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: #e6edf3; overflow-x: auto; line-height: 1.6;
+    max-height: 300px; overflow-y: auto;
+  }
+  .code-block .key { color: #79c0ff; }
+  .code-block .str { color: #a5d6ff; }
+  .code-block .num { color: #f2cc60; }
+
+  /* ── USERS TABLE ──────────────────────────────── */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 14px;
+    background: var(--surface2); color: var(--text2);
+    font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 14px; border-bottom: 1px solid rgba(31,45,69,0.5);
+    color: var(--text); vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(26,34,53,0.5); }
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .tag-green { background: rgba(16,185,129,0.12); color: var(--success); }
+  .tag-blue  { background: rgba(59,130,246,0.12); color: var(--accent); }
+  .tag-red   { background: rgba(239,68,68,0.12);  color: var(--danger); }
+
+  /* ── SPINNER ──────────────────────────────────── */
+  .spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    animation: spin 0.6s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TIMELINE ─────────────────────────────────── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item {
+    display: flex; gap: 16px; padding-bottom: 20px;
+    position: relative;
+  }
+  .tl-item:not(:last-child)::before {
+    content: ''; position: absolute;
+    left: 19px; top: 40px; bottom: 0;
+    width: 1px; background: var(--border);
+  }
+  .tl-dot {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; z-index: 1;
+  }
+  .tl-dot.done { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+  .tl-body { flex: 1; padding-top: 8px; }
+  .tl-title { font-size: 14px; font-weight: 600; }
+  .tl-desc  { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+
+  /* ── TABS ─────────────────────────────────────── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .tab {
+    padding: 10px 18px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    color: var(--text2); transition: all var(--transition);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── TOAST ────────────────────────────────────── */
+  #toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 9999;
+  }
+  .toast {
+    padding: 12px 18px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+    animation: slideIn 0.3s ease;
+    border: 1px solid; backdrop-filter: blur(10px);
+    min-width: 280px; max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .toast-success { background: rgba(16,185,129,0.9);  border-color: var(--success); color: white; }
+  .toast-error   { background: rgba(239,68,68,0.9);   border-color: var(--danger);  color: white; }
+  .toast-info    { background: rgba(59,130,246,0.9);  border-color: var(--accent);  color: white; }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);   opacity: 1; }
+  }
+
+  /* ── RESPONSIVE ───────────────────────────────── */
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .hamburger { display: flex !important; }
+  }
+  .hamburger {
+    display: none; flex-direction: column; gap: 5px;
+    cursor: pointer; padding: 8px;
+    background: none; border: none;
+  }
+  .hamburger span { width: 22px; height: 2px; background: var(--text); border-radius: 2px; }
+
+  /* ── SCROLLBAR ────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* ── UTILITY ──────────────────────────────────── */
+  .text-muted    { color: var(--text2); }
+  .text-small    { font-size: 12px; }
+  .text-mono     { font-family: var(--font-mono); }
+  .flex          { display: flex; align-items: center; }
+  .flex-between  { display: flex; align-items: center; justify-content: space-between; }
+  .gap-8         { gap: 8px; }
+  .gap-12        { gap: 12px; }
+  .mt-8          { margin-top: 8px; }
+  .mt-16         { margin-top: 16px; }
+  .mb-8          { margin-bottom: 8px; }
+  .divider       { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .hidden        { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ── SIDEBAR ──────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🔐</div>
+      <div class="logo-text">
+        <div class="name">SignSure</div>
+        <div class="tagline">PKI Document Security</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" onclick="showPanel('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+
+      <div class="nav-section-label">PKI Setup</div>
+      <div class="nav-item" onclick="showPanel('ca')">
+        <span class="icon">🏛️</span> Certificate Authority
+      </div>
+      <div class="nav-item" onclick="showPanel('users')">
+        <span class="icon">👤</span> User Registration
+      </div>
+
+      <div class="nav-section-label">Document Operations</div>
+      <div class="nav-item" onclick="showPanel('sign')">
+        <span class="icon">✍️</span> Sign Document
+      </div>
+      <div class="nav-item" onclick="showPanel('verify')">
+        <span class="icon">🔍</span> Verify Signature
+      </div>
+      <div class="nav-item" onclick="showPanel('encrypt')">
+        <span class="icon">🔒</span> Encrypt Document
+      </div>
+      <div class="nav-item" onclick="showPanel('decrypt')">
+        <span class="icon">🔓</span> Decrypt Document
+      </div>
+
+      <div class="nav-section-label">Administration</div>
+      <div class="nav-item" onclick="showPanel('revoke')">
+        <span class="icon">🚫</span> Revoke Certificate
+      </div>
+      <div class="nav-item" onclick="showPanel('about')">
+        <span class="icon">ℹ️</span> About & Algorithms
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-pill">
+        <div class="status-dot" id="statusDot"></div>
+        <div>
+          <div style="font-size:12px;font-weight:600;" id="statusText">Checking…</div>
+          <div style="font-size:11px;color:var(--text3);" id="statusSub">CA status</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ─────────────────────────────────────────── -->
+  <main class="main">
+    <div class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <span class="badge-pill">v1.0.0</span>
+        <span class="badge-pill" style="cursor:pointer" onclick="refreshStatus()">🔄 Refresh</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ DASHBOARD ══════════════════════════════════ -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="grid-3 gap-20">
+          <div class="stat-card">
+            <div class="stat-icon blue">🏛️</div>
+            <div>
+              <div class="stat-num" id="stat-ca">—</div>
+              <div class="stat-label">CA Status</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon cyan">👥</div>
+            <div>
+              <div class="stat-num" id="stat-users">0</div>
+              <div class="stat-label">Registered Users</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✍️</div>
+            <div>
+              <div class="stat-num" id="stat-sigs">0</div>
+              <div class="stat-label">Signatures Issued</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-16 grid-2">
+          <div class="card">
+            <div class="card-title"><span class="icon">⚡</span> Quick Actions</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="btn btn-primary" onclick="showPanel('ca')">🏛️ Initialise CA</button>
+              <button class="btn btn-secondary" onclick="showPanel('users')">👤 Register User</button>
+              <button class="btn btn-secondary" onclick="showPanel('sign')">✍️ Sign a Document</button>
+              <button class="btn btn-secondary" onclick="showPanel('verify')">🔍 Verify a Signature</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="icon">🔐</span> Cryptographic Stack</div>
+            <div class="timeline">
+              <div class="tl-item">
+                <div class="tl-dot done">🔑</div>
+                <div class="tl-body">
+                  <div class="tl-title">RSA-2048 + PSS Signatures</div>
+                  <div class="tl-desc">Probabilistic Signature Scheme with SHA-256 and 32-byte random salt. RFC 8017 §8.1 compliant.</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot done">🛡️</div>
+                <div class="tl-body">
+                  <div class="tl-title">AES-256-GCM Encryption</div>
+                  <div class="tl-desc">Authenticated encryption (AEAD). 128-bit GCM tag detects any tampering. NIST SP 800-38D.</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot done">📜</div>
+                <div class="tl-body">
+                  <div class="tl-title">X.509 v3 PKI + CRL</div>
+                  <div class="tl-desc">Full certificate lifecycle: issue, validate, revoke. RFC 5280 compliant X.509 certificates.</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot done">🔒</div>
+                <div class="tl-body">
+                  <div class="tl-title">PKCS#12 Key Storage</div>
+                  <div class="tl-desc">Private keys encrypted in PKCS#12 keystores. Passphrase protected with PBKDF2-SHA256.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CA PANEL ════════════════════════════════════ -->
+      <div class="panel" id="panel-ca">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="icon">🏛️</span> Initialise Root CA</div>
+            <div class="form-group">
+              <label class="form-label">CA Common Name</label>
+              <input class="form-input" id="ca-name" value="SignSure-RootCA" placeholder="SignSure-RootCA"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Organisation</label>
+              <input class="form-input" id="ca-org" value="SignSure PKI" placeholder="Organisation Name"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Country Code</label>
+              <input class="form-input" id="ca-country" value="NP" placeholder="NP" maxlength="2"/>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="initCA()">
+              🏛️ Generate Root CA
+            </button>
+            <div class="alert alert-success" id="ca-success">
+              <span class="alert-icon">✅</span>
+              <div class="alert-body">
+                <div class="alert-title">CA Initialised</div>
+                <div class="alert-msg" id="ca-success-msg"></div>
+              </div>
+            </div>
+            <div class="alert alert-error" id="ca-error">
+              <span class="alert-icon">❌</span>
+              <div class="alert-body">
+                <div class="alert-title">Error</div>
+                <div class="alert-msg" id="ca-error-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="icon">📜</span> CA Certificate</div>
+            <p class="text-muted text-small" style="margin-bottom:12px;">The Root CA certificate (public). Safe to distribute for verification.</p>
+            <button class="btn btn-secondary btn-full mb-8" onclick="loadCACert()">📋 Load CA Certificate</button>
+            <div class="code-block hidden" id="ca-cert-display" style="margin-top:12px;font-size:11px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ USERS PANEL ═════════════════════════════════ -->
+      <div class="panel" id="panel-users">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="icon">👤</span> Register New User</div>
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <input class="form-input" id="reg-username" placeholder="e.g. alice"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email (optional)</label>
+              <input class="form-input" id="reg-email" type="email" placeholder="alice@example.com"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Passphrase (min 8 chars)</label>
+              <input class="form-input" id="reg-passphrase" type="password" placeholder="Strong passphrase…"/>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="registerUser()">
+              🔑 Generate Keys & Register
+            </button>
+            <div class="alert alert-success" id="reg-success">
+              <span class="alert-icon">✅</span>
+              <div class="alert-body">
+                <div class="alert-title">User Registered</div>
+                <div class="alert-msg" id="reg-success-msg"></div>
+              </div>
+            </div>
+            <div class="alert alert-error" id="reg-error">
+              <span class="alert-icon">❌</span>
+              <div class="alert-body">
+                <div class="alert-title">Error</div>
+                <div class="alert-msg" id="reg-error-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="icon">👥</span> Registered Users</div>
+            <button class="btn btn-secondary btn-sm mb-8" onclick="loadUsers()">🔄 Refresh</button>
+            <div class="table-wrap">
+              <table id="users-table">
+                <thead><tr><th>Username</th><th>Certificate</th><th>Actions</th></tr></thead>
+                <tbody id="users-tbody">
+                  <tr><td colspan="3" class="text-muted text-small" style="text-align:center;padding:24px;">No users yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SIGN PANEL ══════════════════════════════════ -->
+      <div class="panel" id="panel-sign">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="icon">✍️</span> Sign Document</div>
+
+            <div class="form-group">
+              <label class="form-label">Document to Sign</label>
+              <div class="drop-zone" id="sign-drop">
+                <input type="file" id="sign-file" onchange="fileChosen('sign-file','sign-fname')"/>
+                <span class="drop-icon">📄</span>
+                <div class="drop-text">Click or drag & drop a file</div>
+                <div class="drop-hint">PDF, DOCX, TXT, images and more</div>
+                <div class="drop-filename" id="sign-fname"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Signer Username</label>
+              <input class="form-input" id="sign-username" placeholder="e.g. alice"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Keystore Passphrase</label>
+              <input class="form-input" id="sign-passphrase" type="password" placeholder="Your passphrase"/>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="signDocument()">
+              ✍️ Sign Document
+            </button>
+
+            <div class="alert alert-success" id="sign-success">
+              <span class="alert-icon">✅</span>
+              <div class="alert-body">
+                <div class="alert-title">Document Signed</div>
+                <div class="alert-msg" id="sign-success-msg"></div>
+              </div>
+            </div>
+            <div class="alert alert-error" id="sign-error">
+              <span class="alert-icon">❌</span>
+              <div class="alert-body">
+                <div class="alert-title">Signing Failed</div>
+                <div class="alert-msg" id="sign-error-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="icon">📋</span> Signature Details</div>
+            <p class="text-muted text-small" style="margin-bottom:16px;">Signature bundle will appear here after signing.</p>
+            <div id="sign-result" class="hidden">
+              <div class="result-grid" id="sign-result-rows"></div>
+              <hr class="divider"/>
+              <button class="btn btn-secondary btn-sm" onclick="downloadSig()">⬇️ Download .sig File</button>
+              <div class="code-block mt-16" id="sign-bundle-display" style="font-size:11px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VERIFY PANEL ════════════════════════════════ -->
+      <div class="panel" id="panel-verify">
+        <div class="card gap-20">
+          <div class="card-title"><span class="icon">🔍</span> Verify Document Signature</div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Original Document</label>
+              <div class="drop-zone">
+                <input type="file" id="verify-file" onchange="fileChosen('verify-file','verify-fname')"/>
+                <span class="drop-icon">📄</span>
+                <div class="drop-text">Upload original document</div>
+                <div class="drop-filename" id="verify-fname"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Signature File (.sig)</label>
+              <div class="drop-zone">
+                <input type="file" id="verify-sig" accept=".sig" onchange="fileChosen('verify-sig','verify-sfname')"/>
+                <span class="drop-icon">🔏</span>
+                <div class="drop-text">Upload .sig file</div>
+                <div class="drop-filename" id="verify-sfname"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="verifyDocument()">
+            🔍 Verify Signature
+          </button>
+
+          <div id="verify-result" class="hidden mt-16">
+            <div class="verify-banner" id="verify-banner">
+              <span class="verify-icon" id="verify-icon"></span>
+              <div>
+                <div class="verify-title" id="verify-title"></div>
+                <div class="verify-sub"  id="verify-sub"></div>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="result-grid" id="verify-checks"></div>
+              <div class="result-grid" id="verify-details"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ENCRYPT PANEL ═══════════════════════════════ -->
+      <div class="panel" id="panel-encrypt">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="icon">🔒</span> Encrypt Document</div>
+            <div class="form-group">
+              <label class="form-label">Document to Encrypt</label>
+              <div class="drop-zone">
+                <input type="file" id="enc-file" onchange="fileChosen('enc-file','enc-fname')"/>
+                <span class="drop-icon">📄</span>
+                <div class="drop-text">Click or drag & drop</div>
+                <div class="drop-filename" id="enc-fname"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Recipient Username</label>
+              <input class="form-input" id="enc-recipient" placeholder="e.g. bob"/>
+            </div>
+            <div class="alert alert-info" style="display:flex;margin-bottom:16px;">
+              <span class="alert-icon">ℹ️</span>
+              <div class="alert-body">
+                <div class="alert-msg">Hybrid AES-256-GCM + RSA-OAEP. Only the recipient's private key can decrypt. No passphrase is required to encrypt — encryption uses the recipient's public certificate.</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="encryptDocument()">🔒 Encrypt</button>
+
+            <div class="alert alert-success" id="enc-success">
+              <span class="alert-icon">✅</span>
+              <div class="alert-body">
+                <div class="alert-title">Encrypted</div>
+                <div class="alert-msg" id="enc-success-msg"></div>
+              </div>
+            </div>
+            <div class="alert alert-error" id="enc-error">
+              <span class="alert-icon">❌</span>
+              <div class="alert-body">
+                <div class="alert-title">Error</div>
+                <div class="alert-msg" id="enc-error-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="icon">ℹ️</span> How It Works</div>
+            <div class="timeline">
+              <div class="tl-item">
+                <div class="tl-dot">1️⃣</div>
+                <div class="tl-body">
+                  <div class="tl-title">Generate session key</div>
+                  <div class="tl-desc">os.urandom(32) → 256-bit AES key. Ephemeral, used once.</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot">2️⃣</div>
+                <div class="tl-body">
+                  <div class="tl-title">AES-256-GCM encryption</div>
+                  <div class="tl-desc">Encrypts document. GCM tag (128-bit) ensures integrity.</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot">3️⃣</div>
+                <div class="tl-body">
+                  <div class="tl-title">RSA-OAEP key wrap</div>
+                  <div class="tl-desc">Session key encrypted with recipient's RSA-2048 public key.</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot">4️⃣</div>
+                <div class="tl-body">
+                  <div class="tl-title">Output .enc bundle</div>
+                  <div class="tl-desc">[4B key_len][enc_key][12B IV][ciphertext+GCM_tag]</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ DECRYPT PANEL ═══════════════════════════════ -->
+      <div class="panel" id="panel-decrypt">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="icon">🔓</span> Decrypt Document</div>
+            <div class="form-group">
+              <label class="form-label">Encrypted File (.enc)</label>
+              <div class="drop-zone">
+                <input type="file" id="dec-file" accept=".enc" onchange="fileChosen('dec-file','dec-fname')"/>
+                <span class="drop-icon">🔒</span>
+                <div class="drop-text">Upload .enc file</div>
+                <div class="drop-filename" id="dec-fname"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Your Username</label>
+              <input class="form-input" id="dec-username" placeholder="e.g. bob"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Your Passphrase</label>
+              <input class="form-input" id="dec-passphrase" type="password" placeholder="Your passphrase"/>
+            </div>
+            <button class="btn btn-success btn-full" onclick="decryptDocument()">🔓 Decrypt & Download</button>
+
+            <div class="alert alert-error" id="dec-error">
+              <span class="alert-icon">❌</span>
+              <div class="alert-body">
+                <div class="alert-title">Decryption Failed</div>
+                <div class="alert-msg" id="dec-error-msg"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="icon">🛡️</span> Security Notes</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="result-row">
+                <span style="font-size:20px;">🔑</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Private Key Required</div>
+                  <div class="text-muted text-small">Only the recipient whose public key was used to encrypt can decrypt.</div>
+                </div>
+              </div>
+              <div class="result-row">
+                <span style="font-size:20px;">🛡️</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Tamper Detection</div>
+                  <div class="text-muted text-small">AES-GCM authentication tag fails immediately if ciphertext was modified.</div>
+                </div>
+              </div>
+              <div class="result-row">
+                <span style="font-size:20px;">🗑️</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Ephemeral Session Key</div>
+                  <div class="text-muted text-small">AES key is zeroed in memory after use — forward secrecy.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ REVOKE PANEL ════════════════════════════════ -->
+      <div class="panel" id="panel-revoke">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="icon">🚫</span> Revoke Certificate</div>
+            <div class="form-group">
+              <label class="form-label">Certificate Serial Number</label>
+              <input class="form-input" id="revoke-serial" type="number" placeholder="e.g. 1000"/>
+            </div>
+            <div class="alert alert-error" style="display:flex;margin-bottom:16px;">
+              <span class="alert-icon">⚠️</span>
+              <div class="alert-body">
+                <div class="alert-title">Warning</div>
+                <div class="alert-msg">Revocation is permanent. Signatures from this certificate will fail future verifications.</div>
+              </div>
+            </div>
+            <button class="btn btn-danger btn-full" onclick="revokeCert()">🚫 Revoke & Update CRL</button>
+
+            <div class="alert alert-success" id="rev-success">
+              <span class="alert-icon">✅</span>
+              <div class="alert-body">
+                <div class="alert-title">Revoked</div>
+                <div class="alert-msg" id="rev-success-msg"></div>
+              </div>
+            </div>
+            <div class="alert alert-error" id="rev-error">
+              <span class="alert-icon">❌</span>
+              <div class="alert-body">
+                <div class="alert-title">Error</div>
+                <div class="alert-msg" id="rev-error-msg"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="icon">📋</span> CRL Status</div>
+            <button class="btn btn-secondary btn-sm mb-8" onclick="loadCRL()">🔄 Load CRL</button>
+            <div id="crl-content" class="text-muted text-small">Click Load CRL to view revoked entries.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ABOUT PANEL ═════════════════════════════════ -->
+      <div class="panel" id="panel-about">
+        <div class="card">
+          <div class="card-title"><span class="icon">ℹ️</span> About SignSure — Algorithm Reference</div>
+          <div class="grid-2" style="gap:24px;">
+            <div>
+              <h3 style="font-size:14px;margin-bottom:12px;color:var(--accent);">🔑 Digital Signatures</h3>
+              <div class="result-grid">
+                <div class="result-row"><div class="result-label">Algorithm</div><div class="result-val">RSASSA-PSS</div></div>
+                <div class="result-row"><div class="result-label">Hash</div><div class="result-val">SHA-256 (FIPS 180-4)</div></div>
+                <div class="result-row"><div class="result-label">Key Size</div><div class="result-val">RSA-2048</div></div>
+                <div class="result-row"><div class="result-label">PSS Salt</div><div class="result-val">32 bytes</div></div>
+                <div class="result-row"><div class="result-label">Standard</div><div class="result-val">RFC 8017 §8.1</div></div>
+                <div class="result-row"><div class="result-label">Security</div><div class="result-val">112-bit (NIST 2030+)</div></div>
+              </div>
+
+              <h3 style="font-size:14px;margin:20px 0 12px;color:var(--accent);">🔒 Encryption</h3>
+              <div class="result-grid">
+                <div class="result-row"><div class="result-label">Symmetric</div><div class="result-val">AES-256-GCM</div></div>
+                <div class="result-row"><div class="result-label">Key Exchange</div><div class="result-val">RSA-OAEP</div></div>
+                <div class="result-row"><div class="result-label">IV Size</div><div class="result-val">96-bit (random)</div></div>
+                <div class="result-row"><div class="result-label">Auth Tag</div><div class="result-val">128-bit GCM</div></div>
+                <div class="result-row"><div class="result-label">Standard</div><div class="result-val">NIST SP 800-38D</div></div>
+              </div>
+            </div>
+
+            <div>
+              <h3 style="font-size:14px;margin-bottom:12px;color:var(--accent);">📜 PKI</h3>
+              <div class="result-grid">
+                <div class="result-row"><div class="result-label">Format</div><div class="result-val">X.509 v3</div></div>
+                <div class="result-row"><div class="result-label">CA Type</div><div class="result-val">Self-signed Root CA</div></div>
+                <div class="result-row"><div class="result-label">Keystore</div><div class="result-val">PKCS#12 (.p12)</div></div>
+                <div class="result-row"><div class="result-label">Revocation</div><div class="result-val">X.509 CRL (RFC 5280)</div></div>
+                <div class="result-row"><div class="result-label">CA Signing</div><div class="result-val">SHA256WithRSA</div></div>
+              </div>
+
+              <h3 style="font-size:14px;margin:20px 0 12px;color:var(--accent);">🛡️ Attacks Prevented</h3>
+              <div class="result-grid">
+                <div class="result-row"><span class="check">✅</span><div>Signature Forgery (RSA-PSS)</div></div>
+                <div class="result-row"><span class="check">✅</span><div>Document Tampering (SHA-256)</div></div>
+                <div class="result-row"><span class="check">✅</span><div>Replay Attack (timestamp + hash)</div></div>
+                <div class="result-row"><span class="check">✅</span><div>MITM (X.509 cert chain)</div></div>
+                <div class="result-row"><span class="check">✅</span><div>Padding Oracle (PSS + OAEP)</div></div>
+                <div class="result-row"><span class="check">✅</span><div>Ciphertext Tamper (GCM tag)</div></div>
+                <div class="result-row"><span class="check">✅</span><div>Key Theft (PKCS#12 + passphrase)</div></div>
+                <div class="result-row"><span class="check">✅</span><div>Revoked Cert Use (CRL check)</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
+
+<!-- ── TOAST CONTAINER ─────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script>
+// ── NAV ──────────────────────────────────────────────
+const PANEL_TITLES = {
+  dashboard: 'Dashboard',
+  ca: 'Certificate Authority',
+  users: 'User Registration',
+  sign: 'Sign Document',
+  verify: 'Verify Signature',
+  encrypt: 'Encrypt Document',
+  decrypt: 'Decrypt Document',
+  revoke: 'Revoke Certificate',
+  about: 'About & Algorithms',
+};
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.getElementById('pageTitle').textContent = PANEL_TITLES[id] || id;
+  // activate nav item
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id) ||
+        n.getAttribute('onclick') === `showPanel('${id}')`) {
+      n.classList.add('active');
+    }
+  });
+  if (id === 'users') loadUsers();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ── STATUS ────────────────────────────────────────────
+async function refreshStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const dot  = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    const sub  = document.getElementById('statusSub');
+
+    document.getElementById('stat-users').textContent = d.registered_users.length;
+    document.getElementById('stat-sigs').textContent  = d.signature_count;
+    document.getElementById('stat-ca').textContent    = d.ca_initialised ? 'Ready' : 'None';
+
+    if (d.ca_initialised) {
+      dot.className  = 'status-dot active';
+      text.textContent = 'CA Active';
+      sub.textContent  = `${d.registered_users.length} users`;
+    } else {
+      dot.className  = 'status-dot warn';
+      text.textContent = 'CA Not Init';
+      sub.textContent  = 'Go to CA Setup';
+    }
+  } catch(e) {
+    document.getElementById('statusText').textContent = 'Server Error';
+  }
+}
+refreshStatus();
+setInterval(refreshStatus, 10000);
+
+// ── TOAST ─────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${msg}`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ── FILE CHOOSER ──────────────────────────────────────
+function fileChosen(inputId, displayId) {
+  const file = document.getElementById(inputId).files[0];
+  const disp = document.getElementById(displayId);
+  if (file) { disp.style.display = 'block'; disp.textContent = `📎 ${file.name}`; }
+}
+
+// ── ALERT HELPERS ─────────────────────────────────────
+function showAlert(id, msgId, msg) {
+  document.getElementById(id).classList.add('visible');
+  document.getElementById(msgId).textContent = msg;
+}
+function hideAlerts(...ids) { ids.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('visible'); }); }
+
+// ── CA ────────────────────────────────────────────────
+async function initCA() {
+  hideAlerts('ca-success','ca-error');
+  const body = {
+    ca_name: document.getElementById('ca-name').value,
+    org:     document.getElementById('ca-org').value,
+    country: document.getElementById('ca-country').value,
+  };
+  try {
+    const r = await fetch('/api/ca/init', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (d.success) {
+      showAlert('ca-success','ca-success-msg', `CA '${body.ca_name}' created. Serial: ${d.serial}`);
+      toast('Root CA initialised!', 'success');
+      refreshStatus();
+    } else {
+      showAlert('ca-error','ca-error-msg', d.error);
+    }
+  } catch(e) { showAlert('ca-error','ca-error-msg', e.message); }
+}
+
+async function loadCACert() {
+  try {
+    const r = await fetch('/api/ca/cert');
+    const d = await r.json();
+    const el = document.getElementById('ca-cert-display');
+    el.classList.remove('hidden');
+    el.textContent = d.cert_pem || d.error;
+  } catch(e) { toast('Failed to load cert', 'error'); }
+}
+
+// ── USERS ─────────────────────────────────────────────
+async function registerUser() {
+  hideAlerts('reg-success','reg-error');
+  const body = {
+    username:   document.getElementById('reg-username').value.trim(),
+    email:      document.getElementById('reg-email').value.trim(),
+    passphrase: document.getElementById('reg-passphrase').value,
+  };
+  if (!body.username || !body.passphrase) { toast('Username and passphrase required','error'); return; }
+  try {
+    const r = await fetch('/api/users/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (d.success) {
+      showAlert('reg-success','reg-success-msg', `'${body.username}' registered. Serial: ${d.serial}`);
+      toast(`User '${body.username}' registered!`, 'success');
+      loadUsers(); refreshStatus();
+    } else {
+      showAlert('reg-error','reg-error-msg', d.error);
+    }
+  } catch(e) { showAlert('reg-error','reg-error-msg', e.message); }
+}
+
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/users/list');
+    const d = await r.json();
+    const tbody = document.getElementById('users-tbody');
+    if (!d.users || d.users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-small" style="text-align:center;padding:24px;">No users yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.users.map(u => `
+      <tr>
+        <td><strong>${u.username}</strong></td>
+        <td><span class="tag ${u.has_cert ? 'tag-green' : 'tag-red'}">${u.has_cert ? '✅ Active' : '❌ Missing'}</span></td>
+        <td><button class="btn btn-secondary btn-sm" onclick="viewCert('${u.username}')">📜 View Cert</button></td>
+      </tr>`).join('');
+  } catch(e) {}
+}
+
+async function viewCert(username) {
+  const r = await fetch(`/api/users/${username}/cert`);
+  const d = await r.json();
+  if (d.cert_pem) {
+    showPanel('ca');
+    const el = document.getElementById('ca-cert-display');
+    el.classList.remove('hidden');
+    el.textContent = `// Certificate for: ${username}\n` + d.cert_pem;
+  }
+}
+
+// ── SIGN ──────────────────────────────────────────────
+let lastSigFilename = null;
+
+async function signDocument() {
+  hideAlerts('sign-success','sign-error');
+  document.getElementById('sign-result').classList.add('hidden');
+
+  const file = document.getElementById('sign-file').files[0];
+  if (!file) { toast('Please select a file','error'); return; }
+
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('username',   document.getElementById('sign-username').value);
+  fd.append('passphrase', document.getElementById('sign-passphrase').value);
+
+  try {
+    const r = await fetch('/api/sign', { method:'POST', body: fd });
+    const d = await r.json();
+    if (d.success) {
+      lastSigFilename = d.sig_filename;
+      showAlert('sign-success','sign-success-msg', d.message);
+      toast('Document signed!', 'success');
+
+      // Show result
+      document.getElementById('sign-result').classList.remove('hidden');
+      document.getElementById('sign-result-rows').innerHTML = `
+        <div class="result-row"><div class="result-label">Signer</div><div class="result-val">${d.sig_bundle.certificate_pem ? extractCN(d.sig_bundle.certificate_pem) : 'N/A'}</div></div>
+        <div class="result-row"><div class="result-label">Timestamp</div><div class="result-val">${d.timestamp}</div></div>
+        <div class="result-row"><div class="result-label">Algorithm</div><div class="result-val">RSA-PSS + SHA-256</div></div>
+        <div class="result-row"><div class="result-label">Serial</div><div class="result-val">${d.serial}</div></div>
+        <div class="result-row"><div class="result-label">Document Hash</div><div class="result-val text-mono" style="font-size:11px;">${d.document_hash.substring(0,32)}…</div></div>
+        <div class="result-row"><div class="result-label">.sig File</div><div class="result-val">${d.sig_filename}</div></div>
+      `;
+      document.getElementById('sign-bundle-display').textContent = JSON.stringify(d.sig_bundle, null, 2);
+      refreshStatus();
+    } else {
+      showAlert('sign-error','sign-error-msg', d.error);
+    }
+  } catch(e) { showAlert('sign-error','sign-error-msg', e.message); }
+}
+
+function downloadSig() {
+  if (lastSigFilename) window.open(`/api/signatures/${lastSigFilename}`, '_blank');
+}
+
+  // Add UI hook: create a visible download button when signature is created
+  function showSigDownloadButton() {
+    const container = document.getElementById('sign-result-rows');
+    if (!container) return;
+    const btnId = 'sign-download-btn';
+    if (document.getElementById(btnId)) return;
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary btn-sm';
+    btn.id = btnId;
+    btn.style.marginLeft = '12px';
+    btn.textContent = 'Download .sig';
+    btn.onclick = downloadSig;
+    container.appendChild(btn);
+  }
+
+function extractCN(pem) {
+  const m = pem.match(/CN=([^,\n/]+)/);
+  return m ? m[1] : 'Unknown';
+}
+
+// ── VERIFY ────────────────────────────────────────────
+async function verifyDocument() {
+  document.getElementById('verify-result').classList.add('hidden');
+
+  const docFile = document.getElementById('verify-file').files[0];
+  const sigFile = document.getElementById('verify-sig').files[0];
+  if (!docFile || !sigFile) { toast('Both files required','error'); return; }
+
+  const fd = new FormData();
+  fd.append('file',     docFile);
+  fd.append('sig_file', sigFile);
+
+  try {
+    const r = await fetch('/api/verify', { method:'POST', body: fd });
+    const d = await r.json();
+
+    document.getElementById('verify-result').classList.remove('hidden');
+
+    const banner = document.getElementById('verify-banner');
+    banner.className = `verify-banner ${d.valid ? 'pass' : 'fail'}`;
+    document.getElementById('verify-icon').textContent  = d.valid ? '✅' : '❌';
+    document.getElementById('verify-title').textContent = d.valid ? 'Signature VALID' : 'Signature INVALID';
+    document.getElementById('verify-sub').textContent   = d.valid
+      ? `Signed by ${d.signer_name} on ${d.signed_at}`
+      : (d.errors || []).join(' • ');
+
+    document.getElementById('verify-checks').innerHTML = `
+      <div class="result-row">${d.chain_valid ? '<span class="check">✅</span>' : '<span class="cross">❌</span>'} <div>Certificate chain valid</div></div>
+      <div class="result-row">${d.not_expired ? '<span class="check">✅</span>' : '<span class="cross">❌</span>'} <div>Certificate not expired</div></div>
+      <div class="result-row">${d.not_revoked ? '<span class="check">✅</span>' : '<span class="cross">❌</span>'} <div>Certificate not revoked (CRL)</div></div>
+      <div class="result-row">${d.hash_match ? '<span class="check">✅</span>' : '<span class="cross">❌</span>'} <div>Document hash matches</div></div>
+      <div class="result-row">${d.sig_math_valid ? '<span class="check">✅</span>' : '<span class="cross">❌</span>'} <div>RSA-PSS signature valid</div></div>
+    `;
+
+    document.getElementById('verify-details').innerHTML = `
+      <div class="result-row"><div class="result-label">Signer</div><div class="result-val">${d.signer_name || '—'}</div></div>
+      <div class="result-row"><div class="result-label">Serial</div><div class="result-val">${d.signer_serial || '—'}</div></div>
+      <div class="result-row"><div class="result-label">Signed At</div><div class="result-val">${d.signed_at || '—'}</div></div>
+      <div class="result-row"><div class="result-label">Document</div><div class="result-val">${d.document_name || '—'}</div></div>
+    `;
+
+    toast(d.valid ? 'Signature verified!' : 'Verification FAILED', d.valid ? 'success' : 'error');
+  } catch(e) { toast('Verification error: ' + e.message, 'error'); }
+}
+
+// ── ENCRYPT ───────────────────────────────────────────
+async function encryptDocument() {
+  hideAlerts('enc-success','enc-error');
+  const file = document.getElementById('enc-file').files[0];
+  if (!file) { toast('Please select a file','error'); return; }
+
+  const fd = new FormData();
+  fd.append('file',      file);
+  fd.append('recipient', document.getElementById('enc-recipient').value);
+
+  try {
+    const r = await fetch('/api/encrypt', { method:'POST', body: fd });
+    const d = await r.json();
+    if (d.success) {
+      lastEncFilename = d.enc_filename;
+      showAlert('enc-success','enc-success-msg', `${d.message} File: ${d.enc_filename}`);
+      showEncDownloadButton();
+      toast('Document encrypted!', 'success');
+    } else {
+      showAlert('enc-error','enc-error-msg', d.error);
+    }
+  } catch(e) { showAlert('enc-error','enc-error-msg', e.message); }
+}
+
+let lastEncFilename = null;
+function downloadEncrypted() {
+  if (lastEncFilename) window.open(`/api/encrypted/${lastEncFilename}`, '_blank');
+}
+
+function showEncDownloadButton() {
+  const el = document.getElementById('enc-success');
+  if (!el) return;
+  if (document.getElementById('enc-download-btn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'enc-download-btn';
+  btn.className = 'btn btn-secondary btn-sm';
+  btn.style.marginTop = '8px';
+  btn.textContent = 'Download Encrypted (.enc)';
+  btn.onclick = downloadEncrypted;
+  el.querySelector('.alert-body').appendChild(btn);
+}
+
+// ── DECRYPT ───────────────────────────────────────────
+async function decryptDocument() {
+  hideAlerts('dec-error');
+  const file = document.getElementById('dec-file').files[0];
+  if (!file) { toast('Please select a .enc file','error'); return; }
+
+  const fd = new FormData();
+  fd.append('file',       file);
+  fd.append('username',   document.getElementById('dec-username').value);
+  fd.append('passphrase', document.getElementById('dec-passphrase').value);
+
+  try {
+    const r = await fetch('/api/decrypt', { method:'POST', body: fd });
+    if (r.ok) {
+      const decHeader = r.headers.get('X-Decrypted-Filename');
+      const blob = await r.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      // If server provided the actual filename, use it, otherwise fall back
+      // to a generic name derived from the uploaded file.
+      const fname = decHeader || ('decrypted_' + file.name.replace(/\.enc$/i, ''));
+      a.href     = url; a.download = fname;
+      a.click(); URL.revokeObjectURL(url);
+      lastDecFilename = fname;
+      showDecDownloadButton();
+      toast('Decrypted! File downloading.', 'success');
+    } else {
+      const d = await r.json();
+      showAlert('dec-error','dec-error-msg', d.error);
+    }
+  } catch(e) { showAlert('dec-error','dec-error-msg', e.message); }
+}
+
+let lastDecFilename = null;
+function downloadDecrypted() {
+  if (lastDecFilename) window.open(`/api/decrypted/${lastDecFilename}`, '_blank');
+}
+
+function showDecDownloadButton() {
+  const card = document.querySelector('#panel-decrypt .card');
+  if (!card) return;
+  if (document.getElementById('dec-download-btn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'dec-download-btn';
+  btn.className = 'btn btn-secondary btn-sm';
+  btn.style.marginTop = '12px';
+  btn.textContent = 'Download Decrypted';
+  btn.onclick = downloadDecrypted;
+  card.appendChild(btn);
+}
+
+// ── REVOKE ────────────────────────────────────────────
+async function revokeCert() {
+  hideAlerts('rev-success','rev-error');
+  const serial = document.getElementById('revoke-serial').value;
+  if (!serial) { toast('Serial number required','error'); return; }
+
+  try {
+    const r = await fetch('/api/revoke', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({serial: parseInt(serial)}) });
+    const d = await r.json();
+    if (d.success) {
+      showAlert('rev-success','rev-success-msg', d.message);
+      toast('Certificate revoked!', 'success');
+    } else {
+      showAlert('rev-error','rev-error-msg', d.error);
+    }
+  } catch(e) { showAlert('rev-error','rev-error-msg', e.message); }
+}
+
+async function loadCRL() {
+  const r = await fetch('/api/crl');
+  const d = await r.json();
+  const el = document.getElementById('crl-content');
+  if (d.count === 0) {
+    el.textContent = 'CRL is empty — no certificates revoked.';
+  } else {
+    el.innerHTML = `<strong>${d.count} revoked certificates:</strong><br><br>` +
+      Object.entries(d.revoked).map(([s,v]) =>
+        `Serial ${s}: revoked ${v.revocation_date.substring(0,10)} (${v.reason})`
+      ).join('<br>');
+  }
+}
+
+// ── DRAG AND DROP ─────────────────────────────────────
+document.querySelectorAll('.drop-zone').forEach(zone => {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const input = zone.querySelector('input[type="file"]');
+    if (input && e.dataTransfer.files.length) {
+      const dt = new DataTransfer();
+      dt.items.add(e.dataTransfer.files[0]);
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  });
+});
+</script>
+</body>
+</html>

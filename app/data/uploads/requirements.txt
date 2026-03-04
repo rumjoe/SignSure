@@ -1,0 +1,23 @@
+# SignSure — Python Dependencies
+# Install: pip install -r requirements.txt
+
+# Core cryptographic library (NIST-compliant algorithms)
+cryptography>=42.0.0
+
+# Web framework for the UI
+flask>=3.0.0
+werkzeug>=3.0.0
+
+# CLI argument parsing
+click>=8.1.0
+
+# Terminal output
+colorama>=0.4.6
+
+# Testing framework
+pytest>=8.0.0
+pytest-cov>=4.0.0
+
+# Code quality
+black>=24.0.0
+flake8>=7.0.0
